@@ -225,20 +225,14 @@ tr:hover td{background:var(--surface2)}
     <div id="loginAlert"></div>
     <div class="form-group">
       <label>従業員ID / ユーザー名</label>
-      <input type="text" id="loginUser" placeholder="例: admin または emp001" value="admin">
+      <input type="text" id="loginUser" placeholder="例: admin または emp001">
     </div>
     <div class="form-group">
       <label>パスワード</label>
-      <input type="password" id="loginPass" placeholder="パスワードを入力" value="admin123">
+      <input type="password" id="loginPass" placeholder="パスワードを入力">
     </div>
     <button class="btn btn-primary" onclick="doLogin()">ログイン</button>
-    <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text2)">
-      <strong style="color:var(--text)">デモアカウント</strong><br>
-      管理者: admin / admin123<br>
-      従業員: emp001 / pass001 (田中太郎)<br>
-      従業員: emp002 / pass002 (佐藤花子)<br>
-      従業員: emp003 / pass003 (鈴木一郎)
-    </div>
+
   </div>
 </div>
 
@@ -651,11 +645,7 @@ tr:hover td{background:var(--surface2)}
     <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--text3)">
       認証は <span id="lockTimerDisplay" style="color:var(--warning);font-weight:600">30分</span> 間有効です
     </div>
-    <div style="margin-top:12px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text2)">
-      💡 <strong style="color:var(--text)">初期パスワード：</strong>
-      <span style="font-family:var(--mono);color:var(--warning);font-size:14px;letter-spacing:2px">admin123</span><br>
-      <span style="font-size:11px;color:var(--text3)">※管理画面のシステム設定から変更できます</span>
-    </div>
+
   </div>
 </div>
 
@@ -950,8 +940,8 @@ function doLogout(){
   state.currentUser=null;
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('app').style.display='none';
-  document.getElementById('loginUser').value='admin';
-  document.getElementById('loginPass').value='admin123';
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
   document.getElementById('loginAlert').innerHTML='';
 }
 
@@ -996,7 +986,14 @@ function initFirebaseListeners(){
   // settings リアルタイム同期
   db.ref('settings').on('value', snap=>{
     const data = snap.val();
-    if(data) Object.assign(state.settings, data);
+    if(data){
+      Object.assign(state.settings, data);
+      // 保存済み管理者パスワードをusers配列に反映
+      if(state.settings.adminPassword){
+        const adminUser = users.find(u=>u.role==='admin');
+        if(adminUser) adminUser.pass = state.settings.adminPassword;
+      }
+    }
     if(state.currentUser && state.currentPage==='admin') renderAdminSettings();
   });
 
@@ -1054,6 +1051,11 @@ function initApp(){
       fbSet('settings', state.settings);
     } else {
       Object.assign(state.settings, settingsSnap.val());
+      // 保存済み管理者パスワードをusers配列に反映
+      if(state.settings.adminPassword){
+        const adminUser = users.find(u=>u.role==='admin');
+        if(adminUser) adminUser.pass = state.settings.adminPassword;
+      }
     }
 
     // employees: Firebaseになければ初期データを書き込む
@@ -2301,6 +2303,9 @@ function changeAdminPassword(){
     alertEl.innerHTML='<div class="alert alert-error">新しいパスワードが一致しません</div>';return;
   }
   adminUser.pass=newPw;
+  // Firebaseに保存
+  state.settings.adminPassword = newPw;
+  fbSet('settings', state.settings);
   document.getElementById('pwCurrent').value='';
   document.getElementById('pwNew').value='';
   document.getElementById('pwConfirm').value='';

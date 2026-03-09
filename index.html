@@ -274,6 +274,82 @@ tr:hover td{background:var(--surface2)}
   .fc-scroller { -webkit-overflow-scrolling: touch !important; }
 }
 
+/* ============================================================
+   打刻画面レイアウト（タブレット：横並び・スクロールなし）
+   ============================================================ */
+
+/* 打刻ページ全体ラッパー */
+#timeclock-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 従業員選択グリッド */
+#empTabList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+
+/* タブレット（768px以上）：打刻エリア＋従業員選択を横並び */
+@media (min-width: 768px) {
+  #timeclock-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  /* 左：打刻エリア（固定幅） */
+  #timeclock-left {
+    flex: 0 0 420px;
+    max-width: 420px;
+  }
+
+  /* 右：従業員選択＋全員状況（残り全幅） */
+  #empSelectorArea {
+    flex: 1;
+    min-width: 0;
+    display: flex !important; /* 管理者時は常に表示 */
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* 従業員グリッド：タブレットでは2〜3列 */
+  #empTabList {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+  }
+}
+
+/* 大型タブレット・PC（1024px以上）：4列以上 */
+@media (min-width: 1024px) {
+  #timeclock-left {
+    flex: 0 0 460px;
+  }
+  #empTabList {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
+
+/* 従業員ボタン：グリッド内で均等サイズ */
+.emp-punch-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 8px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all .18s;
+  width: 100%;
+  min-height: 90px;
+  justify-content: center;
+  font-family: var(--sans);
+}
+.emp-punch-btn:hover {
+  transform: translateY(-2px);
+}
+
 /* PROTECTED FIELD */
 .protected-field{position:relative;display:inline-block}
 .protected-field .protected-value{filter:blur(4px);user-select:none;cursor:pointer;font-family:var(--mono)}
@@ -341,36 +417,41 @@ tr:hover td{background:var(--surface2)}
     <!-- TIME CLOCK -->
     <div class="page active" id="page-timeclock">
 
-      <!-- ① 打刻エリア：最上部・中央寄せ・大きく -->
-      <div style="max-width:560px;margin:0 auto 24px">
-        <div class="clock-display" style="font-size:110%">
-          <div id="punchEmpName" style="margin-bottom:8px"></div>
-          <div class="clock-time" id="liveTime" style="font-size:4.5rem">00:00:00</div>
-          <div class="clock-date" id="liveDate">-</div>
-          <div id="clockStatus" class="clock-status status-out">⏹ 退勤中</div>
-          <div class="punch-buttons" style="gap:16px;margin-top:20px">
-            <button class="btn-punch btn-punch-in" onclick="punch('in')" style="font-size:18px;padding:18px 28px">✅ 出勤</button>
-            <button class="btn-punch btn-punch-break" onclick="punch('break')" style="font-size:18px;padding:18px 28px">☕ 休憩</button>
-            <button class="btn-punch btn-punch-out" onclick="punch('out')" style="font-size:18px;padding:18px 28px">🏠 退勤</button>
+      <!-- タブレット：左＝打刻、右＝従業員選択（横並び） -->
+      <div id="timeclock-layout">
+
+        <!-- ① 左：打刻エリア -->
+        <div id="timeclock-left">
+          <div class="clock-display" style="font-size:110%">
+            <div id="punchEmpName" style="margin-bottom:8px"></div>
+            <div class="clock-time" id="liveTime" style="font-size:4.5rem">00:00:00</div>
+            <div class="clock-date" id="liveDate">-</div>
+            <div id="clockStatus" class="clock-status status-out">⏹ 退勤中</div>
+            <div class="punch-buttons" style="gap:16px;margin-top:20px">
+              <button class="btn-punch btn-punch-in" onclick="punch('in')" style="font-size:18px;padding:18px 28px">✅ 出勤</button>
+              <button class="btn-punch btn-punch-break" onclick="punch('break')" style="font-size:18px;padding:18px 28px">☕ 休憩</button>
+              <button class="btn-punch btn-punch-out" onclick="punch('out')" style="font-size:18px;padding:18px 28px">🏠 退勤</button>
+            </div>
+          </div>
+          <div id="todayTimeline" class="card" style="margin-top:16px">
+            <div class="card-header"><div class="card-title">本日の打刻履歴</div></div>
+            <div id="todayPunches"></div>
           </div>
         </div>
-        <div id="todayTimeline" class="card" style="margin-top:16px">
-          <div class="card-header"><div class="card-title">本日の打刻履歴</div></div>
-          <div id="todayPunches"></div>
-        </div>
-      </div>
 
-      <!-- ② 管理者用：従業員選択タブ ＋ 全員状況（打刻の下） -->
-      <div id="empSelectorArea" style="display:none">
-        <div class="card" style="padding:16px">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:700;letter-spacing:1px">👤 次に打刻する従業員を選択</div>
-          <div id="empTabList" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        <!-- ② 右：従業員選択＋全員状況（管理者のみ表示） -->
+        <div id="empSelectorArea" style="display:none">
+          <div class="card" style="padding:16px">
+            <div style="font-size:12px;color:var(--text2);margin-bottom:12px;font-weight:700;letter-spacing:1px">👤 打刻する従業員を選択</div>
+            <div id="empTabList"></div>
+          </div>
+          <div id="allEmpStatusCard" class="card">
+            <div class="card-header"><div class="card-title">📊 本日の全従業員状況</div></div>
+            <div id="allEmpStatusList"></div>
+          </div>
         </div>
-        <div id="allEmpStatusCard" class="card" style="margin-top:12px">
-          <div class="card-header"><div class="card-title">📊 本日の全従業員状況</div></div>
-          <div id="allEmpStatusList"></div>
-        </div>
-      </div>
+
+      </div><!-- /timeclock-layout -->
 
       <!-- 非表示：JSから参照される要素 -->
       <div style="display:none">
@@ -1540,19 +1621,17 @@ function renderEmpTabList(){
       else if(hasOut) st='out_done';
     }
     const isActive = emp.id===activeId;
-    return `<button onclick="selectPunchEmp('${emp.id}')"
-      style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 16px;border-radius:12px;
-        border:${isActive?'3px':'2px'} solid ${isActive?emp.color:'var(--border)'};
-        background:${isActive?emp.color+'28':'var(--surface2)'};
-        cursor:pointer;transition:all .2s;min-width:88px;
-        box-shadow:${isActive?`0 4px 16px ${emp.color}40`:'none'};
-        transform:${isActive?'translateY(-2px)':'none'}">
-      <div style="width:40px;height:40px;border-radius:50%;background:${emp.color};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff;
+    return `<button onclick="selectPunchEmp('${emp.id}')" class="emp-punch-btn"
+      style="border:${isActive?'3px':'2px'} solid ${isActive?emp.color:'var(--border)'};
+        background:${isActive?emp.color+'22':'var(--surface2)'};
+        box-shadow:${isActive?`0 4px 18px ${emp.color}40`:'none'};
+        transform:${isActive?'translateY(-2px) scale(1.03)':'none'}">
+      <div style="width:44px;height:44px;border-radius:50%;background:${emp.color};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;
         box-shadow:${isActive?`0 3px 10px ${emp.color}60`:'none'};
         border:${isActive?'3px solid #fff':'none'}">${emp.name[0]}</div>
-      <div style="font-size:13px;font-weight:${isActive?900:500};color:${isActive?emp.color:'var(--text2)'}">${emp.name}</div>
-      <div style="font-size:10px;color:${statusColors[st]};font-weight:600">${statusLabels[st]}</div>
-      ${isActive?`<div style="font-size:9px;background:${emp.color};color:#fff;padding:1px 8px;border-radius:10px;font-weight:700;letter-spacing:1px">選択中</div>`:''}
+      <div style="font-size:13px;font-weight:${isActive?900:600};color:${isActive?emp.color:'var(--text2)'};text-align:center;word-break:break-all">${emp.name}</div>
+      <div style="font-size:10px;color:${statusColors[st]};font-weight:700">${statusLabels[st]}</div>
+      ${isActive?`<div style="font-size:9px;background:${emp.color};color:#fff;padding:2px 10px;border-radius:10px;font-weight:700;letter-spacing:1px;margin-top:2px">選択中</div>`:''}
     </button>`;
   }).join('');
 }
